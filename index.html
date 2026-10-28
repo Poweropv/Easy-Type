@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadet Easy Type - Smart OCR, Math, Table & Translator to Word</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- PDF.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- Marked.js -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- KaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+  <!-- Cropper.js -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+  <!-- JSZip สำหรับสร้างไฟล์ Word (.docx) แท้ พร้อมกล่องสมการ OMML -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', 'Sarabun', sans-serif; }
+    .login-bg { background: radial-gradient(circle at top left, #e0f2fe, #e0e7ff, #f8fafc); }
+    .brand-ring { background: linear-gradient(135deg, #2563eb, #06b6d4, #10b981); padding: 3px; }
+    .prose h1, .prose h2, .prose h3 { font-weight: 700; margin-top: 0.8em; margin-bottom: 0.4em; }
+    .prose p { margin-bottom: 0.6em; line-height: 1.75; font-size: 16px; }
+    .prose table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 15px; }
+    .prose th, .prose td { border: 1px solid #334155; padding: 8px 12px; text-align: center; }
+    .prose th { background-color: #f1f5f9; font-weight: 700; }
+    .prose img { max-width: 280px; height: auto; margin: 10px auto; display: block; border: 1px solid #e2e8f0; border-radius: 6px; }
+  </style>
+</head>
+<body class="h-screen overflow-hidden bg-slate-50 text-slate-800">
+
+  <!-- ================= 1. หน้า LOGIN (Username: cadet, Password: 0018) ================= -->
+  <div id="loginScreen" class="h-full w-full login-bg flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-xl p-8 w-full max-w-md border border-slate-100 text-center">
+      <div class="w-24 h-24 mx-auto mb-4 rounded-full brand-ring flex items-center justify-center shadow-md">
+        <div class="bg-white w-full h-full rounded-full flex items-center justify-center text-blue-600">
+          <i data-lucide="keyboard" class="w-12 h-12"></i>
+        </div>
+      </div>
+      
+      <h1 class="text-2xl font-bold text-slate-900">Cadet Easy Type</h1>
+      <p class="text-sm text-slate-500 mt-1 mb-6">ระบบพิมพ์ข้อสอบ สมการ ตาราง แปลภาษา และรูปภาพลง Word อัตโนมัติ</p>
+
+      <form onsubmit="handleLogin(event)" class="text-left space-y-3">
+        <div>
+          <label class="text-xs font-semibold text-slate-600 flex items-center gap-1.5 mb-1">
+            <i data-lucide="user" class="w-3.5 h-3.5"></i> Username
+          </label>
+          <input type="text" id="usernameInput" placeholder="กรอก username" autocomplete="off" required
+            class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+        </div>
+
+        <div>
+          <label class="text-xs font-semibold text-slate-600 flex items-center gap-1.5 mb-1">
+            <i data-lucide="lock" class="w-3.5 h-3.5"></i> Password
+          </label>
+          <input type="password" id="passwordInput" placeholder="กรอก password" autocomplete="off" required
+            class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+        </div>
+
+        <div>
+          <label class="text-xs font-semibold text-slate-600 flex items-center gap-1.5 mb-1">
+            <i data-lucide="key" class="w-3.5 h-3.5"></i> Gemini API Key
+          </label>
+          <div class="relative">
+            <input type="password" id="apiKeyInput" placeholder="วาง Gemini API Key (AIzaSy...)" required
+              class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm pr-10">
+            <button type="button" onclick="togglePassword()" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">รับคีย์ฟรีได้ที่ <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-blue-600 underline">Google AI Studio</a></p>
+        </div>
+
+        <button type="submit"
+          class="w-full mt-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl shadow-md shadow-blue-500/20 transition flex items-center justify-center gap-2">
+          <span>เข้าสู่ระบบ Cadet Easy Type</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= 2. หน้า WORKSPACE หลัก ================= -->
+  <div id="appScreen" class="hidden h-full flex flex-col">
+    
+    <!-- Top Toolbar -->
+    <header class="h-14 bg-white border-b border-slate-200 px-4 flex items-center justify-between shrink-0 gap-2 overflow-x-auto">
+      <div class="flex items-center gap-2 shrink-0">
+        <div class="flex items-center gap-2 font-bold text-slate-800 mr-1">
+          <div class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-sm">
+            <i data-lucide="keyboard" class="w-5 h-5"></i>
+          </div>
+          <span class="hidden sm:inline text-base">Cadet Easy Type</span>
+        </div>
+
+        <button onclick="resetAppWorkspace()" class="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 transition">
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+          <span>เคลียร์ / เริ่มใหม่</span>
+        </button>
+
+        <span class="text-xs bg-slate-100 text-slate-500 px-2.5 py-1 rounded-full flex items-center gap-1.5 max-w-[140px] truncate">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+          <span id="fileNameText" class="truncate">ยังไม่ได้เลือกไฟล์</span>
+        </span>
+      </div>
+
+      <!-- เลือกโมเดล & ฟังก์ชันแปลภาษา -->
+      <div class="flex items-center gap-2 shrink-0">
+        <select id="modelSelect" class="bg-slate-100 text-slate-700 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none">
+          <option value="gemini-3.5-flash-lite" selected>gemini-3.5-flash-lite</option>
+        </select>
+
+        <!-- เลือกภาษาสำหรับแปล -->
+        <select id="translateSelect" class="bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-semibold px-2.5 py-1.5 rounded-lg focus:outline-none">
+          <option value="none">🌐 ไม่แปลภาษา</option>
+          <option value="en-th">🇬🇧 ➡️ 🇹🇭 แปลเป็นไทย</option>
+          <option value="th-en">🇹🇭 ➡️ 🇬🇧 แปลเป็นอังกฤษ</option>
+          <option value="zh-en">🇨🇳 ➡️ 🇬🇧 จีน เป็น อังกฤษ</option>
+          <option value="zh-th">🇨🇳 ➡️ 🇹🇭 จีน เป็น ไทย</option>
+          <option value="en-zh">🇬🇧 ➡️ 🇨🇳 อังกฤษ เป็น จีน</option>
+          <option value="th-zh">🇹🇭 ➡️ 🇨🇳 ไทย เป็น จีน</option>
+        </select>
+
+        <label class="flex items-center gap-1.5 bg-blue-50 text-blue-800 border border-blue-200 px-2.5 py-1.5 rounded-lg text-xs font-medium cursor-pointer">
+          <input type="checkbox" id="includeImageCheck" onchange="updatePreviewFromRaw()" class="rounded text-blue-600">
+          <i data-lucide="image" class="w-3.5 h-3.5"></i>
+          <span>แทรกรูปใน Word</span>
+        </label>
+      </div>
+
+      <!-- ปุ่มคำสั่งหลัก -->
+      <div class="flex items-center gap-2 shrink-0">
+        <button id="processBtn" onclick="processCurrentPage()" disabled
+          class="bg-blue-600 disabled:bg-blue-300 hover:bg-blue-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 transition shadow-sm">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+          <span>แปลงข้อความ/แปลภาษา</span>
+        </button>
+
+        <button id="copyBtn" onclick="copyForWord()" disabled
+          class="bg-slate-100 disabled:opacity-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 transition">
+          <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+          <span>Copy ไปวาง Word</span>
+        </button>
+
+        <button id="downloadWordBtn" onclick="exportToWord()" disabled
+          class="bg-emerald-600 disabled:bg-slate-200 disabled:text-slate-400 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 transition">
+          <i data-lucide="file-down" class="w-3.5 h-3.5"></i>
+          <span>สร้างไฟล์ Word (.DOCX)</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Split View -->
+    <div class="flex-1 flex overflow-hidden outline-none" tabindex="0" id="mainWorkspace" onpaste="handlePaste(event)"
+         ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+      
+      <!-- ฝั่งซ้าย -->
+      <div class="w-1/2 bg-slate-100/80 border-r border-slate-200 flex flex-col items-center justify-center p-4 relative overflow-hidden" id="dropZone">
+        
+        <div id="emptyStateLeft" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-10 text-center max-w-md w-full transition border-dashed hover:border-blue-400">
+          <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-4">
+            <i data-lucide="clipboard-paste" class="w-6 h-6"></i>
+          </div>
+          <h3 class="font-bold text-slate-800 text-base">อัปโหลดไฟล์ข้อสอบ / เอกสาร</h3>
+          <p class="text-xs text-slate-500 mt-1 mb-4 leading-relaxed">
+            <b>กด Ctrl + V</b> เพื่อวางรูปที่แคปจาก Sniping Tool ได้ทันที<br>หรือลากไฟล์มาวาง / เลือกผ่านปุ่มด้านล่าง
+          </p>
+          <label class="cursor-pointer inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-5 py-2.5 rounded-lg shadow-sm transition">
+            <i data-lucide="upload" class="w-4 h-4"></i>
+            <span>เลือกไฟล์ PDF หรือ รูปภาพ</span>
+            <input type="file" accept=".pdf,image/*" class="hidden" onchange="handleFileSelected(event)">
+          </label>
+        </div>
+
+        <div id="previewContainer" class="hidden flex-col items-center w-full h-full">
+          <div class="flex flex-wrap items-center justify-between gap-2 w-full bg-white px-3 py-2 rounded-xl shadow-sm border border-slate-200 mb-3 text-xs">
+            <div id="pdfControls" class="hidden items-center gap-2 font-medium">
+              <button onclick="changePage(-1)" class="p-1 hover:bg-slate-100 rounded"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+              <span>หน้า <span id="pageNum">1</span>/<span id="pageCount">1</span></span>
+              <button onclick="changePage(1)" class="p-1 hover:bg-slate-100 rounded"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+            </div>
+
+            <div class="flex items-center gap-1.5 ml-auto">
+              <button id="startCropBtn" onclick="startCropFigure()" class="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2.5 py-1 rounded-lg font-medium flex items-center gap-1 transition">
+                <i data-lucide="crop" class="w-3.5 h-3.5"></i>
+                <span>ตัดเฉพาะรูปประกอบใส่ Word</span>
+              </button>
+              <button id="confirmCropBtn" onclick="confirmCropFigure()" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg font-medium flex items-center gap-1">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                <span>ยืนยันใช้รูปนี้</span>
+              </button>
+              <button id="cancelCropBtn" onclick="cancelCropFigure()" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded-lg">
+                ยกเลิก
+              </button>
+              <button onclick="cleanCroppedFigure()" class="bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 px-2.5 py-1 rounded-lg font-medium flex items-center gap-1 transition">
+                <i data-lucide="wand-2" class="w-3.5 h-3.5"></i>
+                <span>ปรับรูปขาวสะอาด</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex-1 overflow-auto flex items-center justify-center w-full bg-white rounded-xl border border-slate-200 p-2">
+            <canvas id="pdfCanvas" class="hidden max-w-full"></canvas>
+            <img id="imagePreview" class="max-w-full max-h-full object-contain" />
+          </div>
+        </div>
+      </div>
+
+      <!-- ฝั่งขวา -->
+      <div class="w-1/2 bg-white flex flex-col overflow-hidden">
+        <div class="h-10 border-b border-slate-100 px-4 flex items-center justify-between text-xs shrink-0">
+          <div class="flex items-center gap-2 text-slate-600 font-medium truncate">
+            <span id="statusDot" class="w-2 h-2 rounded-full bg-slate-400 shrink-0"></span>
+            <span id="statusText" class="truncate">พร้อมทำงาน (กด Ctrl+V เพื่อวางรูปภาพได้เลย)</span>
+          </div>
+          <div class="flex items-center gap-1 shrink-0">
+            <button onclick="insertTableTemplate()" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium flex items-center gap-1">
+              <i data-lucide="table" class="w-3 h-3"></i> +ตาราง
+            </button>
+            <div class="flex items-center bg-slate-100 p-0.5 rounded-md ml-1">
+              <button onclick="toggleView('preview')" id="view-preview" class="px-2.5 py-1 rounded bg-white shadow-sm text-slate-800 font-medium">ตัวอย่างก่อนลง Word</button>
+              <button onclick="toggleView('raw')" id="view-raw" class="px-2.5 py-1 rounded text-slate-600">แก้ไขข้อความ/โค้ด</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex-1 overflow-auto p-6 relative">
+          <div id="emptyStateRight" class="h-full flex flex-col items-center justify-center text-center max-w-sm mx-auto">
+            <h3 class="font-bold text-slate-700 text-sm">ยังไม่มีผลลัพธ์</h3>
+            <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+              1. กด <b>Ctrl + V</b> วางรูปที่แคปจาก Sniping Tool หรืออัปโหลดไฟล์<br>
+              2. เลือกภาษาที่ต้องการแปล (ถ้ามี) แล้วกด <b>"แปลงข้อความ/แปลภาษา"</b>
+            </p>
+          </div>
+
+          <div id="outputPreview" class="hidden prose max-w-none text-slate-800"></div>
+
+          <textarea id="outputRaw" oninput="updatePreviewFromRaw()"
+            class="hidden w-full h-full resize-none border border-slate-200 rounded-xl p-4 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="ข้อความ ตาราง และตำแหน่งรูปภาพ {{IMAGE}} จะแสดงที่นี่..."></textarea>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed top-16 right-5 bg-slate-900 text-white text-xs font-medium px-4 py-2.5 rounded-full shadow-lg flex items-center gap-2 transition-all duration-300 opacity-0 pointer-events-none z-50">
+    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+    <span id="toastMsg">Welcome!</span>
+  </div>
+
+  <script>
+    lucide.createIcons();
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    let apiKey = '';
+    let pdfDoc = null;
+    let currentPage = 1;
+    let currentImageBase64 = '';
+    let croppedFigureDataUrl = '';
+    let cropper = null;
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').innerText = msg;
+      toast.classList.remove('opacity-0');
+      setTimeout(() => toast.classList.add('opacity-0'), 3500);
+    }
+
+    function togglePassword() {
+      const input = document.getElementById('apiKeyInput');
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const user = document.getElementById('usernameInput').value.trim();
+      const pass = document.getElementById('passwordInput').value.trim();
+      apiKey = document.getElementById('apiKeyInput').value.trim();
+
+      if (user !== 'cadet' || pass !== '0018') {
+        alert('Username หรือ Password ไม่ถูกต้อง!');
+        return;
+      }
+
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('appScreen').classList.remove('hidden');
+      document.getElementById('mainWorkspace').focus();
+      showToast(`ยินดีต้อนรับสู่ Cadet Easy Type!`);
+      await loadAvailableModels();
+    }
+
+    async function loadAvailableModels() {
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+        const data = await res.json();
+        if (data.models) {
+          const select = document.getElementById('modelSelect');
+          const allModels = data.models
+            .map(m => m.name.replace('models/', ''))
+            .filter(name => name.includes('gemini'));
+          if (allModels.length > 0) {
+            select.innerHTML = '';
+            allModels.sort((a, b) => {
+              if (a.includes('3.5-flash-lite')) return -1;
+              if (b.includes('3.5-flash-lite')) return 1;
+              return 0;
+            });
+            allModels.forEach(m => {
+              const opt = document.createElement('option');
+              opt.value = m;
+              opt.textContent = m;
+              if (m.includes('3.5-flash-lite')) opt.selected = true;
+              select.appendChild(opt);
+            });
+          }
+        }
+      } catch (e) {
+        console.warn('Could not auto-fetch models list:', e);
+      }
+    }
+
+    function toggleView(view) {
+      const previewEl = document.getElementById('outputPreview');
+      const rawEl = document.getElementById('outputRaw');
+      if (document.getElementById('emptyStateRight').classList.contains('hidden')) {
+        if (view === 'preview') {
+          previewEl.classList.remove('hidden');
+          rawEl.classList.add('hidden');
+        } else {
+          previewEl.classList.add('hidden');
+          rawEl.classList.remove('hidden');
+        }
+      }
+      document.getElementById('view-preview').className = view === 'preview'
+        ? 'px-2.5 py-1 rounded bg-white shadow-sm text-slate-800 font-medium'
+        : 'px-2.5 py-1 rounded text-slate-600';
+      document.getElementById('view-raw').className = view === 'raw'
+        ? 'px-2.5 py-1 rounded bg-white shadow-sm text-slate-800 font-medium'
+        : 'px-2.5 py-1 rounded text-slate-600';
+    }
+
+    function compressImageToDataUrl(imgElement, maxWidth = 1000) {
+      const canvas = document.createElement('canvas');
+      let w = imgElement.naturalWidth || imgElement.width;
+      let h = imgElement.naturalHeight || imgElement.height;
+      if (w > maxWidth) {
+        h = Math.round((h * maxWidth) / w);
+        w = maxWidth;
+      }
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(imgElement, 0, 0, w, h);
+      return canvas.toDataURL('image/jpeg', 0.85);
+    }
+
+    function handlePaste(e) {
+      const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+      for (let item of items) {
+        if (item.type.indexOf('image') === 0) {
+          const blob = item.getAsFile();
+          processFileObject(blob);
+          showToast('วางรูปภาพจากคลิปบอร์ดสำเร็จ!');
+          break;
+        }
+      }
+    }
+
+    function handleFileSelected(e) {
+      const file = e.target.files[0];
+      if (file) processFileObject(file);
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      document.getElementById('dropZone').classList.add('bg-blue-50/50');
+    }
+
+    function handleDragLeave(e) {
+      e.preventDefault();
+      document.getElementById('dropZone').classList.remove('bg-blue-50/50');
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      document.getElementById('dropZone').classList.remove('bg-blue-50/50');
+      const file = e.dataTransfer.files[0];
+      if (file) processFileObject(file);
+    }
+
+    async function processFileObject(file) {
+      cancelCropFigure();
+      document.getElementById('fileNameText').innerText = file.name || 'clipboard_image.png';
+      document.getElementById('emptyStateLeft').classList.add('hidden');
+      document.getElementById('previewContainer').classList.remove('hidden');
+      document.getElementById('previewContainer').classList.add('flex');
+      document.getElementById('processBtn').disabled = false;
+
+      if (file.type === 'application/pdf') {
+        document.getElementById('pdfControls').classList.remove('hidden');
+        document.getElementById('pdfControls').classList.add('flex');
+        const arrayBuffer = await file.arrayBuffer();
+        pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        document.getElementById('pageCount').innerText = pdfDoc.numPages;
+        currentPage = 1;
+        await renderPdfPage(currentPage);
+      } else {
+        pdfDoc = null;
+        document.getElementById('pdfControls').classList.add('hidden');
+        const imgEl = document.getElementById('imagePreview');
+
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          const tempImg = new Image();
+          tempImg.onload = function() {
+            const compressedDataUrl = compressImageToDataUrl(tempImg);
+            imgEl.src = compressedDataUrl;
+            currentImageBase64 = compressedDataUrl.split(',')[1];
+            croppedFigureDataUrl = compressedDataUrl;
+          };
+          tempImg.src = evt.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function resetAppWorkspace() {
+      cancelCropFigure();
+      pdfDoc = null;
+      currentPage = 1;
+      currentImageBase64 = '';
+      croppedFigureDataUrl = '';
+
+      document.getElementById('fileNameText').innerText = 'ยังไม่ได้เลือกไฟล์';
+      document.getElementById('emptyStateLeft').classList.remove('hidden');
+      document.getElementById('previewContainer').classList.add('hidden');
+      document.getElementById('previewContainer').classList.remove('flex');
+      document.getElementById('imagePreview').src = '';
+      
+      document.getElementById('emptyStateRight').classList.remove('hidden');
+      document.getElementById('outputPreview').classList.add('hidden');
+      document.getElementById('outputRaw').classList.add('hidden');
+      document.getElementById('outputRaw').value = '';
+      document.getElementById('outputPreview').innerHTML = '';
+
+      document.getElementById('processBtn').disabled = true;
+      document.getElementById('copyBtn').disabled = true;
+      document.getElementById('downloadWordBtn').disabled = true;
+      
+      document.getElementById('statusDot').className = 'w-2 h-2 rounded-full bg-slate-400';
+      document.getElementById('statusText').innerText = 'พร้อมทำงาน (กด Ctrl+V เพื่อวางรูปภาพได้เลย)';
+      showToast('ล้างข้อมูลและเริ่มต้นใหม่เรียบร้อย');
+    }
+
+    async function renderPdfPage(num) {
+      const page = await pdfDoc.getPage(num);
+      const viewport = page.getViewport({ scale: 1.5 });
+      const canvas = document.getElementById('pdfCanvas');
+      const ctx = canvas.getContext('2d');
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+      document.getElementById('pageNum').innerText = num;
+
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      document.getElementById('imagePreview').src = dataUrl;
+      currentImageBase64 = dataUrl.split(',')[1];
+      croppedFigureDataUrl = dataUrl;
+    }
+
+    async function changePage(delta) {
+      if (!pdfDoc) return;
+      const newPage = currentPage + delta;
+      if (newPage >= 1 && newPage <= pdfDoc.numPages) {
+        currentPage = newPage;
+        await renderPdfPage(currentPage);
+      }
+    }
+
+    function startCropFigure() {
+      const imgEl = document.getElementById('imagePreview');
+      if (!imgEl.src) return;
+      if (cropper) cropper.destroy();
+
+      cropper = new Cropper(imgEl, {
+        viewMode: 1,
+        autoCropArea: 0.6,
+        background: false
+      });
+
+      document.getElementById('startCropBtn').classList.add('hidden');
+      document.getElementById('confirmCropBtn').classList.remove('hidden');
+      document.getElementById('cancelCropBtn').classList.remove('hidden');
+      showToast('ลากกรอบคลุมเฉพาะรูปประกอบ แล้วกด "ยืนยันใช้รูปนี้"');
+    }
+
+    function confirmCropFigure() {
+      if (!cropper) return;
+      const croppedCanvas = cropper.getCroppedCanvas({ maxWidth: 600 });
+      croppedFigureDataUrl = croppedCanvas.toDataURL('image/png');
+
+      cropper.destroy();
+      cropper = null;
+
+      document.getElementById('startCropBtn').classList.remove('hidden');
+      document.getElementById('confirmCropBtn').classList.add('hidden');
+      document.getElementById('cancelCropBtn').classList.add('hidden');
+
+      document.getElementById('includeImageCheck').checked = true;
+      const rawEl = document.getElementById('outputRaw');
+      if (rawEl.value && !rawEl.value.includes('{{IMAGE}}')) {
+        rawEl.value = `{{IMAGE}}\n\n` + rawEl.value;
+      }
+      updatePreviewFromRaw();
+      showToast('บันทึกรูปประกอบแล้ว!');
+    }
+
+    function cancelCropFigure() {
+      if (cropper) {
+        cropper.destroy();
+        cropper = null;
+      }
+      document.getElementById('startCropBtn').classList.remove('hidden');
+      document.getElementById('confirmCropBtn').classList.add('hidden');
+      document.getElementById('cancelCropBtn').classList.add('hidden');
+    }
+
+    function cleanCroppedFigure() {
+      if (!croppedFigureDataUrl) return;
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const w = img.width;
+        const h = img.height;
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const d = imgData.data;
+
+        const bin = new Uint8Array(w * h);
+        for (let i = 0; i < d.length; i += 4) {
+          const brightness = d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
+          bin[i >> 2] = brightness > 155 ? 1 : 0;
+        }
+
+        const cleanBin = new Uint8Array(bin);
+        const radius = 2;
+        for (let y = radius; y < h - radius; y++) {
+          for (let x = radius; x < w - radius; x++) {
+            const idx = y * w + x;
+            if (bin[idx] === 0) {
+              let blackCount = 0;
+              for (let dy = -radius; dy <= radius; dy++) {
+                for (let dx = -radius; dx <= radius; dx++) {
+                  if (bin[(y + dy) * w + (x + dx)] === 0) blackCount++;
+                }
+              }
+              if (blackCount <= 5) cleanBin[idx] = 1;
+            }
+          }
+        }
+
+        for (let i = 0; i < cleanBin.length; i++) {
+          const val = cleanBin[i] === 1 ? 255 : 0;
+          const p = i * 4;
+          d[p] = val; d[p + 1] = val; d[p + 2] = val; d[p + 3] = 255;
+        }
+
+        ctx.putImageData(imgData, 0, 0);
+        croppedFigureDataUrl = canvas.toDataURL('image/png');
+        if (!cropper) document.getElementById('imagePreview').src = croppedFigureDataUrl;
+        currentImageBase64 = croppedFigureDataUrl.split(',')[1];
+        updatePreviewFromRaw();
+        showToast('ลบจุดดำเล็กๆ และปรับพื้นหลังขาวสะอาดเรียบร้อย!');
+      };
+      img.src = croppedFigureDataUrl;
+    }
+
+    function insertTableTemplate() {
+      const rawEl = document.getElementById('outputRaw');
+      const tableMd = `\n| หัวตาราง 1 | หัวตาราง 2 |\n| :---: | :---: |\n| ข้อมูล 1 | ข้อมูล 2 |\n| ข้อมูล 3 | ข้อมูล 4 |\n`;
+      rawEl.value += tableMd;
+      document.getElementById('emptyStateRight').classList.add('hidden');
+      document.getElementById('outputPreview').classList.remove('hidden');
+      updatePreviewFromRaw();
+    }
+
+    // ฟังก์ชันประมวลผล OCR และแปลภาษาพร้อมบังคับ Max Output Tokens ป้องกันข้อความตัดหาย
+    async function processCurrentPage() {
+      if (!currentImageBase64) return;
+
+      const selectedModel = document.getElementById('modelSelect').value;
+      const translateMode = document.getElementById('translateSelect').value;
+      const statusDot = document.getElementById('statusDot');
+      const statusText = document.getElementById('statusText');
+      const processBtn = document.getElementById('processBtn');
+
+      statusDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
+      statusText.innerText = `กำลังประมวลผลด้วย ${selectedModel}...`;
+      processBtn.disabled = true;
+
+      let translationInstruction = "";
+      if (translateMode === "en-th") {
+        translationInstruction = "4. คำสั่งพิเศษ: แปลเนื้อหาทั้งหมดจากภาษาอังกฤษเป็นภาษาไทยอย่างละเอียด ครบทุกข้อ ทุกตัวเลือก ห้ามตัดทอนเด็ดขาด";
+      } else if (translateMode === "th-en") {
+        translationInstruction = "4. คำสั่งพิเศษ: แปลเนื้อหาทั้งหมดจากภาษาไทยเป็นภาษาอังกฤษอย่างละเอียด ครบทุกข้อ ทุกตัวเลือก ห้ามตัดทอนเด็ดขาด";
+      } else if (translateMode === "zh-en") {
+        translationInstruction = "4. คำสั่งพิเศษ: แปลเนื้อหาทั้งหมดจากภาษาจีนเป็นภาษาอังกฤษอย่างละเอียด ครบทุกข้อ ทุกตัวเลือก ห้ามตัดทอนเด็ดขาด";
+      } else if (translateMode === "zh-th") {
+        translationInstruction = "4. คำสั่งพิเศษ: แปลเนื้อหาทั้งหมดจากภาษาจีนเป็นภาษาไทยอย่างละเอียด ครบทุกข้อ ทุกตัวเลือก ห้ามตัดทอนเด็ดขาด";
+      } else if (translateMode === "en-zh") {
+        translationInstruction = "4. คำสั่งพิเศษ: แปลเนื้อหาทั้งหมดจากภาษาอังกฤษเป็นภาษาจีนอย่างละเอียด ครบทุกข้อ ทุกตัวเลือก ห้ามตัดทอนเด็ดขาด";
+      } else if (translateMode === "th-zh") {
+        translationInstruction = "4. คำสั่งพิเศษ: แปลเนื้อหาทั้งหมดจากภาษาไทยเป็นภาษาจีนอย่างละเอียด ครบทุกข้อ ทุกตัวเลือก ห้ามตัดทอนเด็ดขาด";
+      }
+
+      const promptText = `คุณคือระบบ OCR และนักแปลข้อสอบอัจฉริยะ:
+1. ถอดข้อความทุกข้อ ทุกบรรทัด และทุกตัวเลือกจากภาพนี้ให้ออกมา "ครบถ้วน 100%" ห้ามย่อหรือตัดข้อความส่วนท้ายทิ้งเด็ดขาด
+2. สำหรับนิพจน์คณิตศาสตร์ ให้ใช้ LaTeX เช่น $\\sqrt{5}$, $-\\frac{3}{2}$, $x^3$
+3. หากมีตาราง ให้สร้างเป็น Markdown และหากมีรูปประกอบ ให้วางคำว่า {{IMAGE}}
+${translationInstruction}
+5. จัดรูปแบบให้อ่านง่ายเป็นข้อๆ`;
+
+      try {
+        const requestBody = {
+          contents: [{
+            parts: [
+              { text: promptText },
+              { inline_data: { mime_type: 'image/jpeg', data: currentImageBase64 } }
+            ]
+          }],
+          generationConfig: {
+            temperature: 0.0,
+            maxOutputTokens: 8192 // ขยายโควต้าความยาวสูงสุด ป้องกันข้อความยาวๆ ตกหล่นหรือตัดจบกลางคัน
+          }
+        };
+
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        });
+
+        const data = await response.json();
+        if (data.error) throw new Error(data.error.message);
+
+        const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+        if (resultText.includes('{{IMAGE}}')) {
+          document.getElementById('includeImageCheck').checked = true;
+        }
+
+        document.getElementById('outputRaw').value = resultText;
+        document.getElementById('emptyStateRight').classList.add('hidden');
+        document.getElementById('outputPreview').classList.remove('hidden');
+
+        updatePreviewFromRaw();
+
+        document.getElementById('copyBtn').disabled = false;
+        document.getElementById('downloadWordBtn').disabled = false;
+        statusDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+        statusText.innerText = 'แปลงและแปลภาษาสำเร็จครบถ้วน!';
+        showToast('ถอดข้อความและแปลภาษาครบถ้วนแล้ว!');
+
+        if (document.getElementById('autoWordCheck') && document.getElementById('autoWordCheck').checked) {
+          exportToWord();
+        }
+
+      } catch (err) {
+        statusDot.className = 'w-2 h-2 rounded-full bg-red-500';
+        statusText.innerText = 'เกิดข้อผิดพลาด: ' + err.message;
+        alert('เกิดข้อผิดพลาด: ' + err.message);
+      } finally {
+        processBtn.disabled = false;
+      }
+    }
+
+    function updatePreviewFromRaw() {
+      let rawText = document.getElementById('outputRaw').value;
+      const includeImg = document.getElementById('includeImageCheck').checked;
+
+      if (includeImg && croppedFigureDataUrl) {
+        const imgTag = `<div style="text-align:center; margin: 12px 0;"><img src="${croppedFigureDataUrl}" style="max-width: 260px; height: auto;" /></div>`;
+        if (rawText.includes('{{IMAGE}}')) {
+          rawText = rawText.replace(/\{\{IMAGE\}\}/g, imgTag);
+        } else {
+          rawText = imgTag + '\n\n' + rawText;
+        }
+      } else {
+        rawText = rawText.replace(/\{\{IMAGE\}\}/g, '');
+      }
+
+      const previewEl = document.getElementById('outputPreview');
+      previewEl.innerHTML = marked.parse(rawText);
+      renderMathInElement(previewEl, {
+        delimiters: [
+          {left: '$$', right: '$$', display: true},
+          {left: '$', right: '$', display: false}
+        ],
+        throwOnError: false
+      });
+    }
+
+    // ============================================================================
+    // ตัวแปลง LaTeX -> Word Native Equation (OMML: <m:oMath>)
+    // ============================================================================
+    function escapeXml(unsafe) {
+      return String(unsafe)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+    }
+
+    const LATEX_SYMBOLS = {
+      '\\infty': '∞', '\\emptyset': '∅', '\\varnothing': '∅',
+      '\\cap': '∩', '\\cup': '∪', '\\subset': '⊂', '\\subseteq': '⊆',
+      '\\in': '∈', '\\notin': '∉', '\\cdot': '⋅', '\\times': '×',
+      '\\div': '÷', '\\pm': '±', '\\leq': '≤', '\\le': '≤',
+      '\\geq': '≥', '\\ge': '≥', '\\neq': '≠', '\\ne': '≠',
+      '\\approx': '≈', '\\Omega': 'Ω', '\\omega': 'ω', '\\alpha': 'α',
+      '\\beta': 'β', '\\theta': 'θ', '\\pi': 'π', '\\mu': 'μ',
+      '\\Delta': 'Δ', '\\circ': '°', '\\log': 'log', '\\ln': 'ln',
+      '\\sin': 'sin', '\\cos': 'cos', '\\tan': 'tan',
+      '\\left': '', '\\right': '', '\\,': ' ', '\\;': ' ', '\\ ': ' '
+    };
+
+    function readLatexGroup(str, pos) {
+      while (pos < str.length && str[pos] === ' ') pos++;
+      if (pos >= str.length) return { content: '', next: pos };
+      if (str[pos] === '{') {
+        let depth = 0, start = pos + 1;
+        for (let i = pos; i < str.length; i++) {
+          if (str[i] === '{' && str[i - 1] !== '\\') depth++;
+          else if (str[i] === '}' && str[i - 1] !== '\\') {
+            depth--;
+            if (depth === 0) return { content: str.slice(start, i), next: i + 1 };
+          }
+        }
+        return { content: str.slice(start), next: str.length };
+      }
+      if (str[pos] === '\\') {
+        let m = str.slice(pos).match(/^\\[a-zA-Z]+/);
+        if (m) return { content: m[0], next: pos + m[0].length };
+      }
+      return { content: str[pos], next: pos + 1 };
+    }
+
+    function makeOmmlRun(text) {
+      if (!text) return '';
+      return `<m:r><m:rPr><m:nor/></m:rPr><w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math" w:cs="TH SarabunPSK"/></w:rPr><m:t>${escapeXml(text)}</m:t></m:r>`;
+    }
+
+    function latexToOmmlNodes(tex) {
+      let s = tex.trim();
+      let out = '';
+      let i = 0;
+
+      while (i < s.length) {
+        if (s[i] === ' ') { i++; continue; }
+
+        if (s.startsWith('\\frac', i)) {
+          i += 5;
+          let num = readLatexGroup(s, i);
+          let den = readLatexGroup(s, num.next);
+          i = den.next;
+          out += `<m:f><m:num>${latexToOmmlNodes(num.content)}</m:num><m:den>${latexToOmmlNodes(den.content)}</m:den></m:f>`;
+          continue;
+        }
+
+        if (s.startsWith('\\sqrt', i)) {
+          i += 5;
+          while (i < s.length && s[i] === ' ') i++;
+          let deg = '';
+          if (s[i] === '[') {
+            let endBracket = s.indexOf(']', i);
+            if (endBracket !== -1) {
+              deg = s.slice(i + 1, endBracket);
+              i = endBracket + 1;
+            }
+          }
+          let body = readLatexGroup(s, i);
+          i = body.next;
+          if (deg) {
+            out += `<m:rad><m:radPr><m:degHide m:val="0"/></m:radPr><m:deg>${latexToOmmlNodes(deg)}</m:deg><m:e>${latexToOmmlNodes(body.content)}</m:e></m:rad>`;
+          } else {
+            out += `<m:rad><m:radPr><m:degHide m:val="1"/></m:radPr><m:deg/><m:e>${latexToOmmlNodes(body.content)}</m:e></m:rad>`;
+          }
+          continue;
+        }
+
+        if (s.startsWith('\\text', i) || s.startsWith('\\mathrm', i)) {
+          let cmdLen = s.startsWith('\\mathrm', i) ? 7 : 5;
+          let grp = readLatexGroup(s, i + cmdLen);
+          i = grp.next;
+          out += makeOmmlRun(grp.content);
+          continue;
+        }
+
+        let baseXml = '';
+        if (s[i] === '{') {
+          let grp = readLatexGroup(s, i);
+          i = grp.next;
+          baseXml = latexToOmmlNodes(grp.content);
+        } else if (s[i] === '\\') {
+          let m = s.slice(i).match(/^(\\[a-zA-Z]+|\\.)/);
+          if (m) {
+            let cmd = m[0];
+            i += cmd.length;
+            let sym = (cmd in LATEX_SYMBOLS) ? LATEX_SYMBOLS[cmd] : cmd.replace('\\', '');
+            baseXml = makeOmmlRun(sym);
+          } else {
+            baseXml = makeOmmlRun(s[i]);
+            i++;
+          }
+        } else {
+          baseXml = makeOmmlRun(s[i]);
+          i++;
+        }
+
+        while (i < s.length && s[i] === ' ') i++;
+        let subContent = null, supContent = null;
+
+        while (i < s.length && (s[i] === '_' || s[i] === '^')) {
+          let type = s[i];
+          i++;
+          let grp = readLatexGroup(s, i);
+          i = grp.next;
+          if (type === '_') subContent = grp.content;
+          else supContent = grp.content;
+          while (i < s.length && s[i] === ' ') i++;
+        }
+
+        if (subContent !== null && supContent !== null) {
+          out += `<m:sSubSup><m:e>${baseXml}</m:e><m:sub>${latexToOmmlNodes(subContent)}</m:sub><m:sup>${latexToOmmlNodes(supContent)}</m:sup></m:sSubSup>`;
+        } else if (subContent !== null) {
+          out += `<m:sSub><m:e>${baseXml}</m:e><m:sub>${latexToOmmlNodes(subContent)}</m:sub></m:sSub>`;
+        } else if (supContent !== null) {
+          out += `<m:sSup><m:e>${baseXml}</m:e><m:sup>${latexToOmmlNodes(supContent)}</m:sup></m:sSup>`;
+        } else {
+          out += baseXml;
+        }
+      }
+      return out;
+    }
+
+    function latexToWordOmml(tex) {
+      return `<m:oMath>${latexToOmmlNodes(tex)}</m:oMath>`;
+    }
+
+    function buildWordParagraphRuns(lineText) {
+      const tokenRegex = /(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$)/g;
+      const parts = lineText.split(tokenRegex);
+      let xml = '';
+
+      for (let part of parts) {
+        if (!part) continue;
+        if (part.startsWith('$$') && part.endsWith('$$')) {
+          xml += latexToWordOmml(part.slice(2, -2));
+        } else if (part.startsWith('$') && part.endsWith('$')) {
+          xml += latexToWordOmml(part.slice(1, -1));
+        } else {
+          if (/\\(?:frac|sqrt|infty|emptyset|cap|cup|cdot|times)|\^|_/.test(part)) {
+            const subParts = part.split(/(-?\\frac\{[^}]+\}\{[^}]+\}|\d*\\sqrt(?:\[[^\]]+\])?\{[^}]+\}|[a-zA-Z0-9]+\^(?:\{[^}]+\}|[a-zA-Z0-9\+\-]+)|[a-zA-Z0-9]+_(?:\{[^}]+\}|[a-zA-Z0-9]+)|\\infty|\\emptyset|\\cap|\\cup|\\cdot)/g);
+            for (let sp of subParts) {
+              if (!sp) continue;
+              if (/^\\|^(-?\\frac|\d*\\sqrt|[a-zA-Z0-9]+[\^_])/.test(sp)) {
+                xml += latexToWordOmml(sp);
+              } else {
+                xml += `<w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr><w:t xml:space="preserve">${escapeXml(sp)}</w:t></w:r>`;
+              }
+            }
+          } else {
+            const cleanText = part.replace(/\*\*/g, '');
+            xml += `<w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr><w:t xml:space="preserve">${escapeXml(cleanText)}</w:t></w:r>`;
+          }
+        }
+      }
+      return xml;
+    }
+
+    async function exportToWord() {
+      const zip = new JSZip();
+      let rawText = document.getElementById('outputRaw').value;
+      const includeImg = document.getElementById('includeImageCheck').checked;
+      let hasEmbeddedImage = false;
+
+      if (includeImg && croppedFigureDataUrl) {
+        hasEmbeddedImage = true;
+        const base64Img = croppedFigureDataUrl.split(',')[1];
+        zip.file("word/media/figure1.png", base64Img, { base64: true });
+        if (!rawText.includes('{{IMAGE}}')) {
+          rawText = '{{IMAGE}}\n' + rawText;
+        }
+      } else {
+        rawText = rawText.replace(/\{\{IMAGE\}\}/g, '');
+      }
+
+      const lines = rawText.split(/\r?\n/);
+      let bodyXml = '';
+      let i = 0;
+
+      while (i < lines.length) {
+        let line = lines[i].trim();
+        if (!line) { i++; continue; }
+
+        if (line === '{{IMAGE}}' && hasEmbeddedImage) {
+          bodyXml += `
+            <w:p>
+              <w:pPr><w:jc w:val="center"/></w:pPr>
+              <w:r>
+                <w:drawing>
+                  <wp:inline distT="0" distB="0" distL="0" distR="0">
+                    <wp:extent cx="2200000" cy="1650000"/>
+                    <wp:docPr id="1" name="Picture 1"/>
+                    <a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+                      <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+                        <pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+                          <pic:nvPicPr><pic:cNvPr id="0" name="figure1.png"/><pic:cNvPicPr/></pic:nvPicPr>
+                          <pic:blipFill><a:blip r:embed="rIdImg1"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>
+                          <pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="2200000" cy="1650000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>
+                        </pic:pic>
+                      </a:graphicData>
+                    </a:graphic>
+                  </wp:inline>
+                </w:drawing>
+              </w:r>
+            </w:p>`;
+          i++;
+          continue;
+        }
+
+        if (line.startsWith('|') && line.endsWith('|')) {
+          let tableRows = [];
+          while (i < lines.length && lines[i].trim().startsWith('|')) {
+            let rowStr = lines[i].trim();
+            if (!/^\|[\s\-:|]+\|$/.test(rowStr)) {
+              const cells = rowStr.slice(1, -1).split('|').map(c => c.trim());
+              tableRows.push(cells);
+            }
+            i++;
+          }
+          if (tableRows.length > 0) {
+            bodyXml += `<w:tbl><w:tblPr><w:tblW w:w="4000" w:type="pct"/><w:jc w:val="center"/><w:tblBorders><w:top w:val="single" w:sz="6" w:space="0" w:color="000000"/><w:left w:val="single" w:sz="6" w:space="0" w:color="000000"/><w:bottom w:val="single" w:sz="6" w:space="0" w:color="000000"/><w:right w:val="single" w:sz="6" w:space="0" w:color="000000"/><w:insideH w:val="single" w:sz="6" w:space="0" w:color="000000"/><w:insideV w:val="single" w:sz="6" w:space="0" w:color="000000"/></w:tblBorders></w:tblPr>`;
+            for (let r of tableRows) {
+              bodyXml += `<w:tr>`;
+              for (let cellText of r) {
+                bodyXml += `<w:tc><w:tcPr><w:tcW w:w="2000" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/></w:pPr>${buildWordParagraphRuns(cellText)}</w:p></w:tc>`;
+              }
+              bodyXml += `</w:tr>`;
+            }
+            bodyXml += `</w:tbl><w:p/>`;
+          }
+          continue;
+        }
+
+        bodyXml += `<w:p><w:pPr><w:spacing w:after="120" w:line="300" w:lineRule="auto"/></w:pPr>${buildWordParagraphRuns(line)}</w:p>`;
+        i++;
+      }
+
+      zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`);
+      zip.file("_rels/.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`);
+      zip.file("word/_rels/document.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${hasEmbeddedImage ? '<Relationship Id="rIdImg1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/figure1.png"/>' : ''}</Relationships>`);
+      zip.file("word/document.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><w:body>${bodyXml}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr></w:body></w:document>`);
+
+      const blob = await zip.generateAsync({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const baseName = document.getElementById('fileNameText').innerText.replace(/\.[^/.]+$/, "") || 'Cadet_Easy_Type';
+      a.download = `${baseName}_CadetEasyType.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('สร้างไฟล์ Word พร้อมกล่องสมการแท้เรียบร้อย!');
+    }
+
+    async function copyForWord() {
+      let rawText = document.getElementById('outputRaw').value;
+      const includeImg = document.getElementById('includeImageCheck').checked;
+
+      const renderPureMathML = (tex, displayMode) => {
+        const html = katex.renderToString(tex.trim(), {
+          displayMode: displayMode,
+          output: 'mathml',
+          throwOnError: false
+        });
+        return html.replace(/<annotation[\s\S]*?<\/annotation>/g, '');
+      };
+
+      rawText = rawText
+        .replace(/\$\$([\s\S]+?)\$\$/g, (_, tex) => renderPureMathML(tex, true))
+        .replace(/\$([^$\n]+?)\$/g, (_, tex) => renderPureMathML(tex, false));
+
+      if (includeImg && croppedFigureDataUrl) {
+        const imgHtml = `<p align="center"><img src="${croppedFigureDataUrl}" width="250" /></p>`;
+        if (rawText.includes('{{IMAGE}}')) {
+          rawText = rawText.replace(/\{\{IMAGE\}\}/g, imgHtml);
+        } else {
+          rawText = imgHtml + '\n\n' + rawText;
+        }
+      } else {
+        rawText = rawText.replace(/\{\{IMAGE\}\}/g, '');
+      }
+
+      const wordHtml = `<html xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><head><meta charset="utf-8"></head><body style="font-family: 'TH SarabunPSK', sans-serif; font-size: 16pt;">${marked.parse(rawText)}</body></html>`;
+      const plainText = document.getElementById('outputRaw').value.replace(/\{\{IMAGE\}\}/g, '');
+
+      try {
+        const blobHtml = new Blob([wordHtml], { type: 'text/html' });
+        const blobText = new Blob([plainText], { type: 'text/plain' });
+        await navigator.clipboard.write([new ClipboardItem({ 'text/html': blobHtml, 'text/plain': blobText })]);
+        showToast('คัดลอกพร้อมสมการแล้ว! กด Ctrl+V ใน Word ได้เลย');
+      } catch (e) {
+        navigator.clipboard.writeText(plainText);
+        showToast('คัดลอกข้อความเรียบร้อย!');
+      }
+    }
+  </script>
+</body>
+</html>
